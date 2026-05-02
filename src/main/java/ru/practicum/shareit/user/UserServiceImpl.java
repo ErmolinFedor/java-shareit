@@ -24,14 +24,15 @@ public class UserServiceImpl implements UserService {
       throw new ValidationException("Email уже зарегистрирован");
     }
     User user = UserMapper.toUser(userDto);
-    log.info("Пользователь успешно создан с id: {}", user.getId());
-    return UserMapper.toUserDto(inMemoryUserRepository.save(user));
+    UserDto createdUser = UserMapper.toUserDto(inMemoryUserRepository.create(user));
+    log.info("Пользователь успешно создан с id: {}", createdUser.getId());
+    return createdUser;
   }
 
   @Override
   public UserDto update(Integer id, UserDto userDto) throws ValidationException {
     log.info("Запрос на обновление пользователя с id: {}. Данные: {}", id, userDto);
-    User user = findUserById(id);
+    User user = findUserByIdOrThrow(id);
 
     if (userDto.getEmail() != null && !userDto.getEmail().equals(user.getEmail())) {
       if (inMemoryUserRepository.isEmailExists(userDto.getEmail())) {
@@ -44,17 +45,17 @@ public class UserServiceImpl implements UserService {
       user.setEmail(userDto.getEmail());
     }
 
-    if (userDto.getName() != null) {
+    if (userDto.getName() != null && !userDto.getName().isBlank()) {
       user.setName(userDto.getName());
     }
 
     log.info("Пользователь с id: {} успешно обновлен", id);
-    return UserMapper.toUserDto(inMemoryUserRepository.save(user));
+    return UserMapper.toUserDto(inMemoryUserRepository.update(user));
   }
 
   @Override
   public UserDto getById(Integer id) {
-    User user = findUserById(id);
+    User user = findUserByIdOrThrow(id);
     return UserMapper.toUserDto(user);
   }
 
@@ -68,11 +69,12 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public void delete(Integer id) {
+    findUserByIdOrThrow(id);
     log.info("Удаление пользователя с id: {}", id);
     inMemoryUserRepository.delete(id);
   }
 
-  private User findUserById(Integer id) {
+  private User findUserByIdOrThrow(Integer id) {
     return inMemoryUserRepository
         .findById(id)
         .orElseThrow(

@@ -23,18 +23,11 @@ public class ItemServiceImpl implements ItemService {
   public ItemDto addNewItem(Integer userId, ItemDto itemDto) {
     log.info("Запрос на добавление вещи пользователем {}: {}", userId, itemDto.getName());
 
-    User owner =
-        inMemoryUserRepository
-            .findById(userId)
-            .orElseThrow(
-                () -> {
-                  log.warn("Ошибка добавления вещи: пользователь {} не найден", userId);
-                  return new NotFoundException("Пользователь не найден");
-                });
+    User owner = findUserOrThrow(userId);
 
-    Item savedItem = inMemoryItemRepository.save(ItemMapper.toItem(itemDto, owner));
-    log.info("Вещь успешно добавлена с id: {}", savedItem.getId());
-    return ItemMapper.toItemDto(savedItem);
+    Item createdItem = inMemoryItemRepository.create(ItemMapper.toItem(itemDto, owner));
+    log.info("Вещь успешно добавлена с id: {}", createdItem.getId());
+    return ItemMapper.toItemDto(createdItem);
   }
 
   @Override
@@ -42,41 +35,31 @@ public class ItemServiceImpl implements ItemService {
       throws AccessDeniedException {
     log.info("Запрос на обновление вещи id: {} пользователем id: {}", itemId, userId);
 
-    Item item =
-        inMemoryItemRepository
-            .findById(itemId)
-            .orElseThrow(
-                () -> {
-                  log.warn(
-                      "Отказ в редактировании: пользователь {} не является владельцем вещи {}",
-                      userId,
-                      itemId);
-                  return new NotFoundException("Вещь не найдена");
-                });
+    Item item = getItemOrThrow(itemId);
 
     if (!item.getOwner().getId().equals(userId)) {
       throw new AccessDeniedException("Только пользователь может редактировать вещь");
     }
 
-    if (itemDto.getName() != null) item.setName(itemDto.getName());
-    if (itemDto.getDescription() != null) item.setDescription(itemDto.getDescription());
+    if (itemDto.getName() != null && !itemDto.getName().isBlank()) item.setName(itemDto.getName());
+    if (itemDto.getDescription() != null && !itemDto.getDescription().isBlank()) {
+      item.setDescription(itemDto.getDescription());
+    }
     if (itemDto.getAvailable() != null) item.setAvailable(itemDto.getAvailable());
 
     log.info("Вещь id: {} успешно обновлена", itemId);
-    return ItemMapper.toItemDto(inMemoryItemRepository.save(item));
+    return ItemMapper.toItemDto(inMemoryItemRepository.update(item));
   }
 
   @Override
   public ItemDto getItemById(Integer itemId) {
-    Item item =
-        inMemoryItemRepository
-            .findById(itemId)
-            .orElseThrow(() -> new RuntimeException("Item not found"));
+    Item item = getItemOrThrow(itemId);
     return ItemMapper.toItemDto(item);
   }
 
   @Override
   public List<ItemDto> getOwnerItems(Integer userId) {
+    findUserOrThrow(userId);
     return inMemoryItemRepository.findAllByOwnerId(userId).stream()
         .map(ItemMapper::toItemDto)
         .collect(Collectors.toList());
@@ -88,5 +71,25 @@ public class ItemServiceImpl implements ItemService {
     return inMemoryItemRepository.search(text).stream()
         .map(ItemMapper::toItemDto)
         .collect(Collectors.toList());
+  }
+
+  private Item getItemOrThrow(Integer itemId) {
+    return inMemoryItemRepository
+        .findById(itemId)
+        .orElseThrow(
+            () -> {
+              log.warn("Вещь с id {} не найдена", itemId);
+              return new NotFoundException(String.format("Вещь с id %s не найдена", itemId));
+            });
+  }
+
+  private User findUserOrThrow(Integer userId) {
+    return inMemoryUserRepository
+        .findById(userId)
+        .orElseThrow(
+            () -> {
+              log.warn("Ошибка пользователь {} не найден", userId);
+              return new NotFoundException(String.format("Пользователь с id %s не найден", userId));
+            });
   }
 }

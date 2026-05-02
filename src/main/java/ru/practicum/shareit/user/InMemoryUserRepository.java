@@ -19,16 +19,22 @@ public class InMemoryUserRepository implements UserRepository {
   private int currentId = 1;
 
   @Override
-  public User save(User user) {
-    if (user.getId() != null) {
-      findById(user.getId()).ifPresent(oldUser -> emails.remove(oldUser.getEmail().toLowerCase()));
-    }
-    if (user.getId() == null) {
-      user.setId(currentId++);
-    }
+  public User create(User user) {
+    user.setId(currentId++);
     users.put(user.getId(), user);
     emails.add(user.getEmail().toLowerCase());
     log.debug("Пользователь с id: {} сохранен в памяти", user.getId());
+    return user;
+  }
+
+  @Override
+  public User update(User user) {
+    if (user.getEmail().equalsIgnoreCase(users.get(user.getId()).getEmail())) {
+      emails.remove(users.get(user.getId()).getEmail());
+      emails.add(user.getEmail());
+    }
+    users.put(user.getId(), user);
+    log.debug("Пользователь с id: {} обновлен в памяти", user.getId());
     return user;
   }
 

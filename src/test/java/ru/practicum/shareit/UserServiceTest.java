@@ -62,4 +62,15 @@ public abstract class UserServiceTest extends BaseServiceTest {
     assertEquals("New Name", updatedUser.getName());
     assertEquals(user.getEmail(), updatedUser.getEmail(), "Email не должен измениться");
   }
+
+  @Test
+  void updateUserEmailSuccessfully() throws ValidationException {
+    UserDto user = userService.create(createValidUserDto());
+    UserDto updateData = UserDto.builder().email("new@yandex.ru").build();
+
+    UserDto updatedUser = userService.update(user.getId(), updateData);
+
+    assertEquals("new@yandex.ru", updatedUser.getEmail());
+    assertEquals(user.getName(), updatedUser.getName(), "Name не должен измениться");
+  }
 }

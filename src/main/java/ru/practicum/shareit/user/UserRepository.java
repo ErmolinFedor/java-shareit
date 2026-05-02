@@ -5,7 +5,9 @@ import java.util.Optional;
 import ru.practicum.shareit.user.model.User;
 
 public interface UserRepository {
-  User save(User user);
+  User create(User user);
+
+  User update(User user);
 
   Optional<User> findById(Integer id);
 

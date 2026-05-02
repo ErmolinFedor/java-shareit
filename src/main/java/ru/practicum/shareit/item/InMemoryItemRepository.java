@@ -17,13 +17,20 @@ public class InMemoryItemRepository implements ItemRepository {
   private int currentId = 1;
 
   @Override
-  public Item save(Item item) {
+  public Item create(Item item) {
     if (item.getId() == null) {
       item.setId(currentId++);
       log.debug("Генерация нового ID: {} для вещи '{}'", item.getId(), item.getName());
     }
     items.put(item.getId(), item);
     log.debug("Вещь с ID: {} сохранена в памяти", item.getId());
+    return item;
+  }
+
+  @Override
+  public Item update(Item item) {
+    items.put(item.getId(), item);
+    log.debug("Вещь с ID: {} обновлена в памяти", item.getId());
     return item;
   }
 
