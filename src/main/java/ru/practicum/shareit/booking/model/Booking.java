@@ -1,4 +1,4 @@
-package ru.practicum.shareit.booking.dto;
+package ru.practicum.shareit.booking.model;
 
 import java.time.LocalDate;
 import lombok.Builder;
@@ -10,7 +10,7 @@ import ru.practicum.shareit.user.model.User;
 /** TODO Sprint add-bookings. */
 @Data
 @Builder
-public class BookingDto {
+public class Booking {
   private Integer id;
   private LocalDate start;
   private LocalDate end;
