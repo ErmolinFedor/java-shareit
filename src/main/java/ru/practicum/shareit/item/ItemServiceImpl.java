@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -109,53 +110,50 @@ public class ItemServiceImpl implements ItemService {
 
     List<Item> items = itemRepository.findAllByOwnerId(userId);
 
-    List<Booking> allBookings = bookingRepository.findAllByItemInAndStatus(items, Status.APPROVED);
+    Map<Integer, List<Booking>> bookingsMap = bookingRepository.findAllByItemInAndStatus(items, Status.APPROVED)
+        .stream()
+        .collect(Collectors.groupingBy(b -> b.getItem().getId()));
 
-    List<Comment> allComments =
-        commentRepository.findAllByItemIdIn(
-            items.stream().map(Item::getId).collect(Collectors.toList()));
+    Map<Integer, List<Comment>> commentsMap = commentRepository.findAllByItemIdIn(
+            items.stream().map(Item::getId).collect(Collectors.toList()))
+        .stream()
+        .collect(Collectors.groupingBy(c -> c.getItem().getId()));
 
     LocalDateTime now = LocalDateTime.now();
 
     return items.stream()
-        .map(
-            item -> {
-              ItemDto dto = ItemMapper.toItemDto(item);
+        .map(item -> {
+          ItemDto dto = ItemMapper.toItemDto(item);
+          Integer itemId = item.getId();
 
-              List<Booking> itemBookings =
-                  allBookings.stream()
-                      .filter(b -> b.getItem().getId().equals(item.getId()))
-                      .toList();
+          List<Booking> itemBookings = bookingsMap.getOrDefault(itemId, Collections.emptyList());
 
-              Booking last =
-                  itemBookings.stream()
-                      .filter(b -> b.getStart().isBefore(now))
-                      .max(Comparator.comparing(Booking::getStart))
-                      .orElse(null);
+          Booking last = itemBookings.stream()
+              .filter(b -> b.getStart().isBefore(now))
+              .max(Comparator.comparing(Booking::getStart))
+              .orElse(null);
 
-              Booking next =
-                  itemBookings.stream()
-                      .filter(b -> b.getStart().isAfter(now))
-                      .min(Comparator.comparing(Booking::getStart))
-                      .orElse(null);
+          Booking next = itemBookings.stream()
+              .filter(b -> b.getStart().isAfter(now))
+              .min(Comparator.comparing(Booking::getStart))
+              .orElse(null);
 
-              if (last != null) {
-                dto.setLastBooking(
-                    new ItemDto.BookingShortDto(last.getId(), last.getBooker().getId()));
-              }
-              if (next != null) {
-                dto.setNextBooking(
-                    new ItemDto.BookingShortDto(next.getId(), next.getBooker().getId()));
-              }
+          if (last != null) {
+            dto.setLastBooking(
+                new ItemDto.BookingShortDto(last.getId(), last.getBooker().getId()));
+          }
+          if (next != null) {
+            dto.setNextBooking(
+                new ItemDto.BookingShortDto(next.getId(), next.getBooker().getId()));
+          }
 
-              dto.setComments(
-                  allComments.stream()
-                      .filter(c -> c.getItem().getId().equals(item.getId()))
-                      .map(CommentMapper::toCommentDto)
-                      .collect(Collectors.toList()));
+          dto.setComments(commentsMap.getOrDefault(itemId, Collections.emptyList())
+              .stream()
+              .map(CommentMapper::toCommentDto)
+              .collect(Collectors.toList()));
 
-              return dto;
-            })
+          return dto;
+        })
         .sorted(Comparator.comparing(ItemDto::getId))
         .collect(Collectors.toList());
   }
@@ -189,7 +187,6 @@ public class ItemServiceImpl implements ItemService {
     Item item = getItemOrThrow(itemId);
 
     Comment comment = CommentMapper.toComment(commentDto, item, author);
-    comment.setCreated(LocalDateTime.now());
 
     return CommentMapper.toCommentDto(commentRepository.save(comment));
   }

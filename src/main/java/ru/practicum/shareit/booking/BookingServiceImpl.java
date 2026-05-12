@@ -1,5 +1,7 @@
 package ru.practicum.shareit.booking;
 
+import static java.util.Objects.isNull;
+
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -45,7 +47,8 @@ public class BookingServiceImpl implements BookingService {
     if (item.getOwner().getId().equals(userId)) {
       throw new ConflictException("Владелец не может забронировать свою вещь");
     }
-    if (dto.getEnd().isBefore(dto.getStart()) || dto.getEnd().isEqual(dto.getStart())) {
+    if (isNull(dto.getStart()) || isNull(dto.getEnd()) || dto.getEnd().isBefore(dto.getStart())
+        || dto.getEnd().isEqual(dto.getStart())) {
       throw new ConflictException("Дата окончания не может быть раньше или равна дате начала");
     }
 
@@ -110,7 +113,9 @@ public class BookingServiceImpl implements BookingService {
           default -> bookingRepository.findAllByBookerIdOrderByStartDesc(userId);
         };
 
-    return bookings.stream().map(BookingMapper::toBookingDto).collect(Collectors.toList());
+    return bookings.stream()
+        .map(BookingMapper::toBookingDto)
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -147,7 +152,9 @@ public class BookingServiceImpl implements BookingService {
           default -> bookingRepository.findAllByItemOwnerIdOrderByStartDesc(userId);
         };
 
-    return bookings.stream().map(BookingMapper::toBookingDto).collect(Collectors.toList());
+    return bookings.stream()
+        .map(BookingMapper::toBookingDto)
+        .collect(Collectors.toList());
   }
 
   private User findUserOrThrow(Integer userId) {

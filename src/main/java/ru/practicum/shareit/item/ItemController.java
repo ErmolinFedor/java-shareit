@@ -73,7 +73,7 @@ public class ItemController {
   public CommentDto addComment(
       @RequestHeader("X-Sharer-User-Id") Integer userId,
       @PathVariable Integer itemId,
-      @RequestBody CommentDto commentDto)
+      @Valid @RequestBody CommentDto commentDto)
       throws ValidationException {
     log.info("Получен запрос POST /items/{}/comment от пользователя id: {}", itemId, userId);
     return itemService.addComment(userId, itemId, commentDto);
