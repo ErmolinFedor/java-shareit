@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.practicum.shareit.exeption.AccessDeniedException;
+import ru.practicum.shareit.exeption.ValidationException;
+import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 
 /** TODO Sprint add-controllers. */
@@ -49,9 +51,10 @@ public class ItemController {
   }
 
   @GetMapping("/{itemId}")
-  public ItemDto getItem(@PathVariable Integer itemId) {
-    log.info("Получен запрос GET /items/{}", itemId);
-    return itemService.getItemById(itemId);
+  public ItemDto getItem(
+      @RequestHeader("X-Sharer-User-Id") Integer userId, @PathVariable Integer itemId) {
+    log.info("Получен запрос GET /items/{} от пользователя id: {}", itemId, userId);
+    return itemService.getItemById(itemId, userId);
   }
 
   @GetMapping
@@ -64,5 +67,15 @@ public class ItemController {
   public List<ItemDto> search(@RequestParam String text) {
     log.info("Получен запрос GET /items/search с текстом: '{}'", text);
     return itemService.searchItems(text);
+  }
+
+  @PostMapping("/{itemId}/comment")
+  public CommentDto addComment(
+      @RequestHeader("X-Sharer-User-Id") Integer userId,
+      @PathVariable Integer itemId,
+      @RequestBody CommentDto commentDto)
+      throws ValidationException {
+    log.info("Получен запрос POST /items/{}/comment от пользователя id: {}", itemId, userId);
+    return itemService.addComment(userId, itemId, commentDto);
   }
 }

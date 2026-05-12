@@ -17,7 +17,7 @@ public class ErrorHandler {
   }
 
   @ExceptionHandler(ValidationException.class)
-  @ResponseStatus(HttpStatus.CONFLICT)
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
   public ErrorResponse handleValidationException(final ValidationException e) {
     log.error("400: {}", e.getMessage());
     return new ErrorResponse(e.getMessage());
@@ -27,6 +27,13 @@ public class ErrorHandler {
   @ResponseStatus(HttpStatus.FORBIDDEN)
   public ErrorResponse handleAccessDeniedException(final AccessDeniedException e) {
     log.error("403: {}", e.getMessage());
+    return new ErrorResponse(e.getMessage());
+  }
+
+  @ExceptionHandler(ConflictException.class)
+  @ResponseStatus(HttpStatus.CONFLICT)
+  public ErrorResponse handleConflictException(final AccessDeniedException e) {
+    log.error("409: {}", e.getMessage());
     return new ErrorResponse(e.getMessage());
   }
 

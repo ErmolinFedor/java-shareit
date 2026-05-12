@@ -1,29 +1,47 @@
 package ru.practicum.shareit.item.model;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import ru.practicum.shareit.request.ItemRequest;
 import ru.practicum.shareit.user.model.User;
 
 /** TODO Sprint add-controllers. */
+@Entity
+@Table(name = "items")
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Item {
-
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Integer id;
 
-  @NotBlank(message = "Имя не может быть пустым")
+  @Column(nullable = false)
   private String name;
 
-  @NotBlank(message = "Описание не может быть пустым")
+  @Column(nullable = false)
   private String description;
 
-  @NotBlank(message = "Статус не может быть пустым")
+  @Column(name = "is_available", nullable = false)
   private Boolean available;
 
-  @NotBlank(message = "владелец не может быть пустым")
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "owner_id", nullable = false)
   private User owner;
 
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "request_id")
   private ItemRequest request;
 }
