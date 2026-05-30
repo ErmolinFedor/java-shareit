@@ -1,5 +1,6 @@
 package ru.practicum.shareit.item;
 
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -15,16 +16,13 @@ import java.util.Map;
 
 @Service
 public class ItemClient extends BaseClient {
+
   private static final String API_PREFIX = "/items";
 
   @Autowired
   public ItemClient(@Value("${shareit-server.url}") String serverUrl, RestTemplateBuilder builder) {
-    super(
-        builder
-            .uriTemplateHandler(new DefaultUriBuilderFactory(serverUrl + API_PREFIX))
-            .requestFactory(() -> new HttpComponentsClientHttpRequestFactory())
-            .build()
-    );
+    super(builder.uriTemplateHandler(new DefaultUriBuilderFactory(serverUrl + API_PREFIX))
+        .requestFactory(() -> new HttpComponentsClientHttpRequestFactory()).build());
   }
 
   public ResponseEntity<Object> getOwnerItems(long userId) {
@@ -44,6 +42,9 @@ public class ItemClient extends BaseClient {
   }
 
   public ResponseEntity<Object> searchItems(long userId, String text) {
+    if (text == null || text.isBlank()) {
+      return ResponseEntity.ok(List.of());
+    }
     Map<String, Object> parameters = Map.of("text", text);
     return get("/search?text={text}", userId, parameters);
   }

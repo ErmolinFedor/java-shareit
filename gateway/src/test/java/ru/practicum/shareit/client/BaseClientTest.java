@@ -1,5 +1,6 @@
 package ru.practicum.shareit.client;
 
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -9,6 +10,7 @@ import org.springframework.web.client.RestTemplate;
 import ru.practicum.shareit.booking.BookingClient;
 import ru.practicum.shareit.booking.dto.BookItemRequestDto;
 import ru.practicum.shareit.booking.dto.BookingState;
+import ru.practicum.shareit.exeption.ValidationException;
 import ru.practicum.shareit.item.ItemClient;
 import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
@@ -33,7 +35,7 @@ class BaseClientTest {
   }
 
   @Test
-  void testAllClientsSuccessScenario() {
+  void testAllClientsSuccessScenario() throws ValidationException {
     ResponseEntity<Object> successResponse = new ResponseEntity<>(HttpStatus.OK);
     Mockito.when(restTemplate.exchange(anyString(), any(HttpMethod.class), any(), any(Class.class),
         anyMap())).thenReturn(successResponse);
@@ -64,7 +66,13 @@ class BaseClientTest {
     assertNotNull(requestClient.getAllRequests(1L));
 
     BookingClient bookingClient = new BookingClient(serverUrl, builder);
-    assertNotNull(bookingClient.bookItem(1L, new BookItemRequestDto()));
+
+    BookItemRequestDto bookItemRequestDto = new BookItemRequestDto();
+    bookItemRequestDto.setItemId(1L);
+    bookItemRequestDto.setStart(LocalDateTime.now().plusDays(1));
+    bookItemRequestDto.setEnd(LocalDateTime.now().plusDays(2));
+
+    assertNotNull(bookingClient.bookItem(1L, bookItemRequestDto));
     assertNotNull(bookingClient.getBooking(1L, 1L));
     assertNotNull(bookingClient.getBookings(1L, BookingState.ALL, 0, 10));
     assertNotNull(bookingClient.getOwnerBookings(1L, BookingState.ALL, 0, 10));

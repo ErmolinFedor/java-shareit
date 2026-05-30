@@ -1,7 +1,5 @@
 package ru.practicum.shareit.booking;
 
-import static java.util.Objects.isNull;
-
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -36,16 +34,6 @@ public class BookingServiceImpl implements BookingService {
   public BookingDto create(Integer userId, BookingInputDto dto) throws ValidationException {
     User booker = findUserOrThrow(userId);
 
-    LocalDateTime now = LocalDateTime.now();
-
-    if (dto.getStart().isBefore(now)) {
-      throw new ValidationException("Дата старта бронирования не может быть в прошлом");
-    }
-
-    if (dto.getEnd().isBefore(dto.getStart()) || dto.getEnd().isEqual(dto.getStart())) {
-      throw new ValidationException("Дата окончания должна быть позже даты старта");
-    }
-
     Item item =
         itemRepository
             .findById(dto.getItemId())
@@ -56,10 +44,6 @@ public class BookingServiceImpl implements BookingService {
     }
     if (item.getOwner().getId().equals(userId)) {
       throw new ConflictException("Владелец не может забронировать свою вещь");
-    }
-    if (isNull(dto.getStart()) || isNull(dto.getEnd()) || dto.getEnd().isBefore(dto.getStart())
-        || dto.getEnd().isEqual(dto.getStart())) {
-      throw new ConflictException("Дата окончания не может быть раньше или равна дате начала");
     }
 
     Booking booking = BookingMapper.toBooking(dto, item, booker);

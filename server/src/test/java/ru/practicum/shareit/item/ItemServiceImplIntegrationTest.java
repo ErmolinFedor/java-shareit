@@ -55,8 +55,6 @@ class ItemServiceImplIntegrationTest {
         () -> itemService.updateItem(stranger.getId(), savedItem.getId(), updateDto));
 
     assertNotNull(itemService.getItemById(savedItem.getId(), owner.getId()));
-    assertTrue(itemService.searchItems("").isEmpty());
-    assertTrue(itemService.searchItems("   ").isEmpty());
     assertFalse(itemService.searchItems("Отвертка").isEmpty());
     assertFalse(itemService.getOwnerItems(owner.getId()).isEmpty());
 

@@ -7,13 +7,11 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.exeption.NotFoundException;
 import ru.practicum.shareit.item.ItemRepository;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.request.dto.ItemAnswerDto;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
 import ru.practicum.shareit.request.dto.ItemRequestResponseDto;
 import ru.practicum.shareit.user.UserRepository;
 import ru.practicum.shareit.user.model.User;
 
-import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -36,13 +34,10 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     User requestor = userRepository.findById(userId)
         .orElseThrow(() -> new NotFoundException("Пользователь не найден с id=" + userId));
 
-    ItemRequest request = ItemRequest.builder()
-        .description(dto.getDescription())
-        .requestor(requestor)
-        .created(LocalDateTime.now())
-        .build();
+    ItemRequest request = ItemRequestMapper.toItemRequest(dto, requestor);
 
-    return toResponseDto(requestRepository.save(request), Collections.emptyList());
+    return ItemRequestMapper.toItemRequestResponseDto(requestRepository.save(request),
+        Collections.emptyList());
   }
 
   @Override
@@ -57,7 +52,8 @@ public class ItemRequestServiceImpl implements ItemRequestService {
   public List<ItemRequestResponseDto> getAllRequests(Integer userId) {
     log.info("Получение чужих запросов для userId={}", userId);
     checkUserExists(userId);
-    List<ItemRequest> requests = requestRepository.findAllByRequestorIdNotOrderByCreatedDesc(userId);
+    List<ItemRequest> requests = requestRepository.findAllByRequestorIdNotOrderByCreatedDesc(
+        userId);
     return addAnswersToRequests(requests);
   }
 
@@ -68,19 +64,17 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     Integer sUserId = userId;
     Integer sRequestId = requestId;
 
-    if (!userRepository.existsById(sUserId)) {
-      throw new NotFoundException("Пользователь не найден с id=" + userId);
-    }
+    checkUserExists(sUserId);
 
     ItemRequest request = requestRepository.findById(sRequestId)
         .orElseThrow(() -> new NotFoundException("Запрос не найден с id=" + requestId));
 
     List<Item> answers = itemRepository.findAllByRequestId(request.getId());
-    log.info("Для реального запроса id={} найдено вещей-ответов: {}", request.getId(), answers.size());
+    log.info("Для реального запроса id={} найдено вещей-ответов: {}", request.getId(),
+        answers.size());
 
-    return toResponseDto(request, answers);
+    return ItemRequestMapper.toItemRequestResponseDto(request, answers);
   }
-
 
   private void checkUserExists(Integer userId) {
     if (!userRepository.existsById(userId)) {
@@ -89,7 +83,9 @@ public class ItemRequestServiceImpl implements ItemRequestService {
   }
 
   private List<ItemRequestResponseDto> addAnswersToRequests(List<ItemRequest> requests) {
-    if (requests.isEmpty()) return Collections.emptyList();
+    if (requests.isEmpty()) {
+      return Collections.emptyList();
+    }
 
     List<Integer> requestIds = requests.stream().map(ItemRequest::getId).toList();
     List<Item> allAnswers = itemRepository.findAllByRequestIdIn(requestIds);
@@ -98,21 +94,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         .filter(item -> item.getRequest() != null)
         .collect(Collectors.groupingBy(item -> item.getRequest().getId()));
 
-    return requests.stream()
-        .map(r -> toResponseDto(r, answersByRequestId.getOrDefault(r.getId(), Collections.emptyList())))
-        .toList();
-  }
-
-  private ItemRequestResponseDto toResponseDto(ItemRequest request, List<Item> items) {
-    List<ItemAnswerDto> itemAnswers = items.stream()
-        .map(i -> new ItemAnswerDto(i.getId(), i.getName(), i.getOwner().getId()))
-        .toList();
-
-    return ItemRequestResponseDto.builder()
-        .id(request.getId())
-        .description(request.getDescription())
-        .created(request.getCreated())
-        .items(itemAnswers)
-        .build();
+    return requests.stream().map(r -> ItemRequestMapper.toItemRequestResponseDto(r,
+        answersByRequestId.getOrDefault(r.getId(), Collections.emptyList()))).toList();
   }
 }

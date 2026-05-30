@@ -165,22 +165,10 @@ class BookingServiceImplIntegrationTest {
   }
 
   @Test
-  void createBookingDateValidations() {
-    User owner = User.builder().name("O").email("owner_d@mail.ru").build();
-    em.persist(owner);
+  void getAllByBookerWithUnsupportedStateShouldThrowValidationException() {
     User booker = User.builder().name("B").email("booker_d@mail.ru").build();
     em.persist(booker);
-    Item item = Item.builder().name("I").description("D").available(true).owner(owner).build();
-    em.persist(item);
     em.flush();
-
-    BookingInputDto pastStart = new BookingInputDto(item.getId(),
-        LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1));
-    assertThrows(ValidationException.class, () -> bookingService.create(booker.getId(), pastStart));
-
-    BookingInputDto endBeforeStart = new BookingInputDto(item.getId(),
-        LocalDateTime.now().plusDays(2), LocalDateTime.now().plusDays(1));
-    assertThrows(ValidationException.class, () -> bookingService.create(booker.getId(), endBeforeStart));
 
     assertThrows(ValidationException.class, () ->
         bookingService.getAllByBooker(booker.getId(), "unsupported_state"));

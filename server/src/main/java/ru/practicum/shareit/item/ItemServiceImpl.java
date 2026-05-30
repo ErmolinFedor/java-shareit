@@ -162,10 +162,6 @@ public class ItemServiceImpl implements ItemService {
 
   @Override
   public List<ItemDto> searchItems(String text) {
-    if (text == null || text.isBlank()) {
-      log.debug("Пустой поисковый запрос, возвращаем пустой список");
-      return Collections.emptyList();
-    }
     log.debug("Поиск вещей в БД по запросу: '{}'", text);
     return itemRepository.search(text).stream()
         .map(ItemMapper::toItemDto)

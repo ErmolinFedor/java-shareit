@@ -1,9 +1,10 @@
 package ru.practicum.shareit.exception;
 
-import jakarta.validation.ValidationException;
-import java.util.Map;
 import org.junit.jupiter.api.Test;
+import ru.practicum.shareit.exeption.ConflictException;
 import ru.practicum.shareit.exeption.ErrorHandler;
+import ru.practicum.shareit.exeption.ErrorResponse;
+import ru.practicum.shareit.exeption.ValidationException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -14,16 +15,18 @@ class ErrorHandlerTest {
   void testErrorHandlerMethods() {
     ErrorHandler errorHandler = new ErrorHandler();
 
-    IllegalArgumentException illegalArgException = new IllegalArgumentException("Unknown state: UNSUPPORTED");
-    Map<String, String> responseArg = errorHandler.handleIllegalArgumentException(illegalArgException);
+    ConflictException conflictException = new ConflictException(
+        "error");
+    ErrorResponse responseConf = errorHandler.handleThrowable(conflictException);
 
-    assertNotNull(responseArg);
-    assertEquals("Unknown state: UNSUPPORTED", responseArg.get("error"));
+    assertNotNull(responseConf);
+    assertEquals("Произошла непредвиденная ошибка.", responseConf.error());
 
-    ValidationException validationException = new ValidationException("Validation failed");
-    Map<String, String> responseVal = errorHandler.handleValidationException(validationException);
+    ValidationException validationException = new ValidationException(
+        "error");
+    ErrorResponse responseVal = errorHandler.handleThrowable(validationException);
 
     assertNotNull(responseVal);
-    assertEquals("Validation failed", responseVal.get("error"));
+    assertEquals("Произошла непредвиденная ошибка.", responseVal.error());
   }
 }
